@@ -1,0 +1,248 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #1a202c;
+    padding: 1rem;
+  }
+  
+  .header {
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #e53e3e;
+  }
+  
+  .appContainer {
+    width: 100%;
+    max-width: 28rem;
+  }
+  
+  .timerDisplay {
+    background-color: #2d3748;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    border: 1px solid #4a5568;
+    cursor: pointer;
+  }
+  
+  .timerText {
+    font-size: 2.25rem;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 0.5rem;
+  }
+  
+  .statusIndicators {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #a0aec0;
+  }
+  
+  .statusContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .statusDot {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    margin-left: 0.25rem;
+  }
+  
+  .dotActive {
+    background-color: #48bb78;
+  }
+  
+  .dotInactive {
+    background-color: #f56565;
+  }
+  
+  .statusLabel {
+    margin-left: 1rem;
+  }
+  
+  .buttonGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .metronomeButton {
+    background-color: #2d3748;
+    color: #e53e3e;
+  }
+  
+  .metronomeButtonActive {
+    background-color: #c53030;
+    color: white;
+  }
+  
+  .ventilationButton {
+    background-color: #2d3748;
+    color: #48bb78;
+  }
+  
+  .ventilationButtonActive {
+    background-color: #2f855a;
+    color: white;
+  }
+  
+  .pulseButton {
+    background-color: #2d3748;
+    color: #4299e1;
+  }
+  
+  .pulseButtonActive {
+    background-color: #2b6cb0;
+    color: white;
+  }
+  
+  .epiButton {
+    background-color: #2d3748;
+    color: #ecc94b;
+  }
+  
+  .epiButtonActive {
+    background-color: #d69e2e;
+    color: white;
+  }
+  
+  .buttonIcon {
+    margin-right: 0.75rem;
+  }
+  
+  .buttonContent {
+    display: flex;
+    align-items: center;
+  }
+  
+  .buttonTextContainer {
+    text-align: left;
+  }
+  
+  .buttonTitle {
+    font-weight: bold;
+    font-size: 1.125rem;
+  }
+  
+  .buttonSubtext {
+    font-size: 0.875rem;
+  }
+  
+  .countdownDisplay {
+    margin-top: 0.5rem;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.25rem;
+    color: white;
+  }
+  
+  .chargeMonitor {
+    background-color: #ecc94b;
+    color: black;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    animation: pulse 2s infinite;
+    margin-top: 0.25rem;
+  }
+  
+  .pauseIndicator {
+    background-color: #e53e3e;
+    color: white;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    animation: pulse 2s infinite;
+  }
+  
+  .sliderContainer {
+    margin-top: 1.5rem;
+    background-color: #2d3748;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    border: 1px solid #4a5568;
+  }
+  
+  .sliderHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  
+  .sliderLabel {
+    font-weight: 500;
+    color: #cbd5e0;
+  }
+  
+  .slider {
+    width: 100%;
+    height: 0.5rem;
+    background-color: #4a5568;
+    border-radius: 0.5rem;
+    appearance: none;
+    cursor: pointer;
+  }
+  
+  .metronomeSlider {
+    accent-color: #e53e3e;
+  }
+  
+  .ventilationSlider {
+    accent-color: #48bb78;
+  }
+  
+  .sliderTicks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #a0aec0;
+    margin-top: 0.25rem;
+  }
+  
+  .ventilationCircle {
+    background-color: #9ae6b4;
+    border-radius: 9999px;
+    transition: all 0.3s;
+    max-width: 32px;
+    max-height: 32px;
+  }
+  
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
