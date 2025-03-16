@@ -634,160 +634,168 @@ const startPauseCountdown = useCallback(() => {
         margin: '0 0 8px 0'
         }}>
         {/* Metronome Button */}
-        <button
-          onClick={handleMetronomeClick}
-          style={{
-            ...buttonBaseStyle,
-            backgroundColor: (activeSection === 'metronome' || activeSection === 'pulse+metronome') 
-              ? COLORS.logoRed 
-              : COLORS.background,
-            color: (activeSection === 'metronome' || activeSection === 'pulse+metronome') 
-              ? COLORS.white 
-              : COLORS.logoRed,
-            border: (activeSection === 'metronome' || activeSection === 'pulse+metronome')
-              ? 'none'
-              : `1px solid ${COLORS.logoRed}`
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Clock style={{ marginRight: '10px' }} size={26} />
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '2px' }}>
-                Compressions
-              </div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
-                110 beats/min
-              </div>
-            </div>
-          </div>
-        </button>
-       
-        {/* Pulse Check Button */}
-        <button
-          onClick={handlePulseCheckClick}
-          style={{
-            ...buttonBaseStyle,
-            backgroundColor: showChargeMonitor 
-              ? COLORS.pulseBlue 
-              : (activeSection === 'pulse' || activeSection === 'pulse+metronome') 
-                ? COLORS.pulseBlue 
-                : COLORS.background,
-            color: (activeSection === 'pulse' || activeSection === 'pulse+metronome') 
-              ? COLORS.white 
-              : COLORS.pulseBlue,
-            border: (activeSection === 'pulse' || activeSection === 'pulse+metronome') 
-              ? 'none' 
-              : `1px solid ${COLORS.pulseBlue}`,
-            animation: showChargeMonitor ? 'pulse 1s infinite' : 'none',
-            animation: pulseFlashing ? 'flashAlternate 1s infinite' : 'none'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <HeartPulse style={{ marginRight: '10px' }} size={26} />
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '2px' }}>
-                Pulse Check
-              </div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
-                2-min countdown
-              </div>
-            </div>
-          </div>
-          {(activeSection === 'pulse' || activeSection === 'pulse+metronome') && (
-            <div style={{ 
-              position: 'absolute',
-              right: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: '22px',
-              fontWeight: 'bold'
-            }}>
-              {pulseCheckTime > 0 ? (
-                <div>{Math.floor(pulseCheckTime / 60) + ":" + (pulseCheckTime % 60).toString().padStart(2, '0')}</div>
-              ) : (
-                <div>{Math.floor(pauseTime / 60) + ":" + (pauseTime % 60).toString().padStart(2, '0')}</div>
-              )}
-            </div>
-          )}
-        </button>
-       
-        {/* Epinephrine Button */}
-        <button
-          onClick={handleEpinephrineClick}
-          style={{
-            ...buttonBaseStyle,
-            backgroundColor: epiActive 
-              ? COLORS.logoYellow 
-              : COLORS.background,
-            color: epiActive 
-              ? COLORS.darkText 
-              : COLORS.logoYellow,
-            border: epiActive 
-              ? 'none' 
-              : `1px solid ${COLORS.logoYellow}`,
-              animation: epiFlashing ? 'flash 1s infinite' : 'none'  
-          }}
-        >
-<div style={{ display: 'flex', alignItems: 'center' }}>
-            <Syringe style={{ marginRight: '10px' }} size={26} />
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '2px' }}>
-                Epinephrine
-              </div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
-                5-min countdown
-              </div>
-              {epiActive && 
-                <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
-                  cycles: {epiCycles}
-                </div>
-              }
-            </div>
-          </div>
-          {epiActive && (
-            <div style={{ 
-              position: 'absolute',
-              right: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: '22px',
-              fontWeight: 'bold'
-            }}>
-              {Math.floor(epiTime / 60)}:{(epiTime % 60).toString().padStart(2, '0')}
-            </div>
-          )}
-        </button>
 
-        {/* Ventilation Button */}
-        <button
-          onClick={toggleVentilation}
-          style={{
-            ...buttonBaseStyle,
-            backgroundColor: ventilationActive 
-              ? COLORS.ventGreen 
-              : COLORS.background,
-            color: ventilationActive 
-              ? COLORS.white 
-              : COLORS.ventGreen,
-            border: ventilationActive 
-              ? 'none' 
-              : `1px solid ${COLORS.ventGreen}`
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Wind style={{ marginRight: '10px' }} size={26} />
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '2px' }}>
-                Ventilation
-              </div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
-                {ventilationRate} breaths/min
-              </div>
-            </div>
-          </div>
-        </button>
-       
 
+{/* Metronome Button */}
+<button
+  onClick={handleMetronomeClick}
+  style={{
+    ...buttonBaseStyle,
+    backgroundColor: (activeSection === 'metronome' || activeSection === 'pulse+metronome') 
+      ? COLORS.logoRed 
+      : COLORS.background,
+    color: (activeSection === 'metronome' || activeSection === 'pulse+metronome') 
+      ? COLORS.white 
+      : COLORS.logoRed,
+    border: (activeSection === 'metronome' || activeSection === 'pulse+metronome')
+      ? 'none'
+      : `1px solid ${COLORS.logoRed}`
+  }}
+>
+  <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+    <div style={{ marginRight: '15px', display: 'flex', alignItems: 'center' }}>
+      <Clock size={42} />
+    </div>
+    <div>
+      <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '2px' }}>
+        Compressions
+      </div>
+      <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
+        110 beats/min
+      </div>
+    </div>
+  </div>
+</button>
+
+{/* Pulse Check Button */}
+<button
+  onClick={handlePulseCheckClick}
+  style={{
+    ...buttonBaseStyle,
+    backgroundColor: showChargeMonitor 
+      ? COLORS.pulseBlue 
+      : (activeSection === 'pulse' || activeSection === 'pulse+metronome') 
+        ? COLORS.pulseBlue 
+        : COLORS.background,
+    color: (activeSection === 'pulse' || activeSection === 'pulse+metronome') 
+      ? COLORS.white 
+      : COLORS.pulseBlue,
+    border: (activeSection === 'pulse' || activeSection === 'pulse+metronome') 
+      ? 'none' 
+      : `1px solid ${COLORS.pulseBlue}`,
+    animation: pulseFlashing ? 'flashAlternate 1s infinite' : 'none'
+  }}
+>
+  <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+    <div style={{ marginRight: '15px', display: 'flex', alignItems: 'center' }}>
+      <HeartPulse size={42} />
+    </div>
+    <div>
+      <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '2px' }}>
+        Pulse Check
+      </div>
+      <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
+        2-min countdown
+      </div>
+    </div>
+  </div>
+  {(activeSection === 'pulse' || activeSection === 'pulse+metronome') && (
+    <div style={{ 
+      position: 'absolute',
+      right: '12px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: '22px',
+      fontWeight: 'bold'
+    }}>
+      {pulseCheckTime > 0 ? (
+        <div>{Math.floor(pulseCheckTime / 60) + ":" + (pulseCheckTime % 60).toString().padStart(2, '0')}</div>
+      ) : (
+        <div>{Math.floor(pauseTime / 60) + ":" + (pauseTime % 60).toString().padStart(2, '0')}</div>
+      )}
+    </div>
+  )}
+</button>
+
+{/* Epinephrine Button */}
+<button
+  onClick={handleEpinephrineClick}
+  style={{
+    ...buttonBaseStyle,
+    backgroundColor: epiActive 
+      ? COLORS.logoYellow 
+      : COLORS.background,
+    color: epiActive 
+      ? COLORS.darkText 
+      : COLORS.logoYellow,
+    border: epiActive 
+      ? 'none' 
+      : `1px solid ${COLORS.logoYellow}`,
+    animation: epiFlashing ? 'flash 1s infinite' : 'none'  
+  }}
+>
+  <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+    <div style={{ marginRight: '15px', display: 'flex', alignItems: 'center' }}>
+      <Syringe size={42} />
+    </div>
+    <div>
+      <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '2px' }}>
+        Epinephrine
+      </div>
+      <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
+        5-min countdown
+      </div>
+      {epiActive && 
+        <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
+          cycles: {epiCycles}
+        </div>
+      }
+    </div>
+  </div>
+  {epiActive && (
+    <div style={{ 
+      position: 'absolute',
+      right: '12px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      fontSize: '22px',
+      fontWeight: 'bold'
+    }}>
+      {Math.floor(epiTime / 60)}:{(epiTime % 60).toString().padStart(2, '0')}
+    </div>
+  )}
+</button>
+
+{/* Ventilation Button */}
+<button
+  onClick={toggleVentilation}
+  style={{
+    ...buttonBaseStyle,
+    backgroundColor: ventilationActive 
+      ? COLORS.ventGreen 
+      : COLORS.background,
+    color: ventilationActive 
+      ? COLORS.white 
+      : COLORS.ventGreen,
+    border: ventilationActive 
+      ? 'none' 
+      : `1px solid ${COLORS.ventGreen}`
+  }}
+>
+  <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+    <div style={{ marginRight: '15px', display: 'flex', alignItems: 'center' }}>
+      <Wind size={42} />
+    </div>
+    <div>
+      <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '2px' }}>
+        Ventilation
+      </div>
+      <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
+        {ventilationRate} breaths/min
+      </div>
+    </div>
+  </div>
+</button>
 
 
 
