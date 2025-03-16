@@ -628,12 +628,11 @@ const startPauseCountdown = useCallback(() => {
 
       {/* Main Buttons */}
       <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
-        gridTemplateRows: 'auto auto',
-        gridGap: '8px',
+        display: 'flex', 
+        flexDirection: 'column',
+        gap: '8px',
         margin: '0 0 8px 0'
-      }}>
+        }}>
         {/* Metronome Button */}
         <button
           onClick={handleMetronomeClick}
@@ -712,35 +711,6 @@ const startPauseCountdown = useCallback(() => {
           )}
         </button>
        
-        {/* Ventilation Button */}
-        <button
-          onClick={toggleVentilation}
-          style={{
-            ...buttonBaseStyle,
-            backgroundColor: ventilationActive 
-              ? COLORS.ventGreen 
-              : COLORS.background,
-            color: ventilationActive 
-              ? COLORS.white 
-              : COLORS.ventGreen,
-            border: ventilationActive 
-              ? 'none' 
-              : `1px solid ${COLORS.ventGreen}`
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Wind style={{ marginRight: '10px' }} size={26} />
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '2px' }}>
-                Ventilation
-              </div>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
-                {ventilationRate} breaths/min
-              </div>
-            </div>
-          </div>
-        </button>
-       
         {/* Epinephrine Button */}
         <button
           onClick={handleEpinephrineClick}
@@ -787,6 +757,40 @@ const startPauseCountdown = useCallback(() => {
             </div>
           )}
         </button>
+
+        {/* Ventilation Button */}
+        <button
+          onClick={toggleVentilation}
+          style={{
+            ...buttonBaseStyle,
+            backgroundColor: ventilationActive 
+              ? COLORS.ventGreen 
+              : COLORS.background,
+            color: ventilationActive 
+              ? COLORS.white 
+              : COLORS.ventGreen,
+            border: ventilationActive 
+              ? 'none' 
+              : `1px solid ${COLORS.ventGreen}`
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Wind style={{ marginRight: '10px' }} size={26} />
+            <div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '2px' }}>
+                Ventilation
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', opacity: 0.9 }}>
+                {ventilationRate} breaths/min
+              </div>
+            </div>
+          </div>
+        </button>
+       
+
+
+
+
       </div>
 
       {/* Ventilation Rate Control - compact slider */}
