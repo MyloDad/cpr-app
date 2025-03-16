@@ -50,7 +50,7 @@ const CPRTempoApp = () => {
   // Play speech synthesis - prevent duplicates by tracking last phrase
   const playSpeech = useCallback((text) => {
     // Don't repeat the same text twice in a row
-    if (lastSpeechRef.current === text) {
+    if (lastSpeechRef.current === text && window.speechSynthesis.speaking) {
       return;
     }
     
@@ -58,10 +58,14 @@ const CPRTempoApp = () => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1.0;
       utterance.volume = 1.0;
-      // Don't cancel previous utterances
+      
+      // Add onend callback to reset lastSpeechRef when speech completes
       utterance.onend = () => {
-        lastSpeechRef.current = "";  // Reset after speaking completes
+        if (lastSpeechRef.current === text) {
+          lastSpeechRef.current = "";  // Reset after speaking completes
+        }
       };
+      
       window.speechSynthesis.speak(utterance);
       lastSpeechRef.current = text;
     }
@@ -251,7 +255,9 @@ const startPulseCountdown = useCallback(() => {
       // Show charge monitor warning at 15 seconds
       if (prevTime === 15) {
         setShowChargeMonitor(true);
-        playSpeech("Charge monitor");
+        if (!window.speechSynthesis.speaking) {
+          playSpeech("Charge monitor");
+        }
       }
       if (prevTime === 15) {
         setPulseFlashing(true);
@@ -259,13 +265,15 @@ const startPulseCountdown = useCallback(() => {
 
       // Countdown for last 5 seconds
       if (prevTime <= 5 && prevTime > 0) {
-        if (!countdownAnnounced[prevTime]) {
+        if (!countdownAnnounced[prevTime] && !window.speechSynthesis.speaking) {
           playSpeech(prevTime.toString());
           setCountdownAnnounced(prev => ({ ...prev, [prevTime]: true }));
           
           if (prevTime === 1) {
             setTimeout(() => {
-              playSpeech("Stop compression");
+              if (!window.speechSynthesis.speaking) {
+                playSpeech("Stop compression");
+              }
             }, 1000);
           }
         }
