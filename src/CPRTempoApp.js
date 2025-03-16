@@ -58,6 +58,10 @@ const CPRTempoApp = () => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1.0;
       utterance.volume = 1.0;
+      // Don't cancel previous utterances
+      utterance.onend = () => {
+        lastSpeechRef.current = "";  // Reset after speaking completes
+      };
       window.speechSynthesis.speak(utterance);
       lastSpeechRef.current = text;
     }
@@ -160,7 +164,9 @@ const CPRTempoApp = () => {
 
   // Play ventilate sound
   const playVentilateSound = useCallback(() => {
-    playSpeech("ventilate");
+    if ('speechSynthesis' in window && !window.speechSynthesis.speaking) {
+      playSpeech("ventilate");
+    }
   }, [playSpeech]);
 
   // Handle Metronome button click
