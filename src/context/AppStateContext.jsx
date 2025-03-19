@@ -436,20 +436,59 @@ export const AppStateProvider = ({ children }) => {
   }, [activeSection, ventilationActive, epiActive, clockStarted]);
 
   // Metronome timer effect
-  useEffect(() => {
-    if (!metronomeRunning) return;
+// Detection for iOS device
+const isIOS = () => {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+};
+
+// Metronome timer effect - OPTIMIZED FOR iOS
+useEffect(() => {
+  if (!metronomeRunning) return;
   
-    // Clear any existing timers
-    if (timerIntervalRef.current) {
-      clearTimeout(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
+  // Clear any existing timers
+  if (timerIntervalRef.current) {
+    clearTimeout(timerIntervalRef.current);
+    timerIntervalRef.current = null;
+  }
+  
+  const bpm = 110; // Fixed BPM
+  if (bpm <= 0) return;
+  
+  // Calculate the beat interval in milliseconds
+  const beatInterval = (60 / bpm) * 1000;
+  
+  // iOS has stricter background processing limitations,
+  // so we'll use a different strategy
+  if (isIOS()) {
+    console.log("Using iOS-optimized metronome strategy");
     
-    const bpm = 110; // Fixed BPM
-    if (bpm <= 0) return;
+    // For iOS, we'll use a simpler approach with more aggressive scheduling
+    // to combat Safari's aggressive throttling
     
-    // Calculate the beat interval in milliseconds
-    const beatInterval = (60 / bpm) * 1000;
+    let intervalId = null;
+    
+    // Play the first beat immediately
+    playSound('metronome');
+    
+    // Use setInterval for iOS - more reliable on iOS than the scheduled approach
+    // We'll create a pre-scheduled buffer of beats
+    intervalId = setInterval(() => {
+      // Play sound on each interval
+      playSound('metronome');
+    }, beatInterval);
+    
+    // Store the interval ID for cleanup
+    timerIntervalRef.current = intervalId;
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  } else {
+    // Desktop browsers can use the more precise scheduling approach
+    console.log("Using desktop-optimized metronome strategy");
     
     // Track when the next beat should occur
     let nextBeatTime = performance.now();
@@ -483,15 +522,20 @@ export const AppStateProvider = ({ children }) => {
     
     // Schedule future beats
     scheduleNextBeat();
-    
-    // Clean up on unmount or when metronome stops
-    return () => {
-      if (timerIntervalRef.current) {
+  }
+  
+  // Clean up on unmount or when metronome stops
+  return () => {
+    if (timerIntervalRef.current) {
+      if (isIOS()) {
+        clearInterval(timerIntervalRef.current);
+      } else {
         clearTimeout(timerIntervalRef.current);
-        timerIntervalRef.current = null;
       }
-    };
-  }, [metronomeRunning, playSound]);
+      timerIntervalRef.current = null;
+    }
+  };
+}, [metronomeRunning, playSound]);
 
   // Ventilation timer effect
   useEffect(() => {
