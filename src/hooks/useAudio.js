@@ -2,7 +2,7 @@ import { useRef, useCallback, useEffect } from 'react';
 
 // The AudioPool helps manage multiple audio instances for concurrent playback
 class AudioPool {
-  constructor(src, poolSize = 3) {
+  constructor(src, poolSize = 3, volume = 1.0) {
     this.src = src;
     this.poolSize = poolSize;
     this.audioElements = [];
@@ -12,6 +12,10 @@ class AudioPool {
     for (let i = 0; i < poolSize; i++) {
       const audio = new Audio(src);
       audio.preload = 'auto';
+      
+      // Set the volume based on the sound type
+      audio.volume = volume;
+      
       this.audioElements.push(audio);
     }
   }
@@ -53,10 +57,26 @@ const useAudio = () => {
   // Reference to hold our audio pools
   const audioPoolsRef = useRef({});
   
+  // Predefined balanced volumes for each sound type
+  // Moved inside the hook to be accessible by callbacks
+  const soundVolumesRef = useRef({
+    metronome: 0.05,            // Reduce metronome volume to 20%
+    ventilate: 1.0,            // Keep ventilate at full volume
+    chargeMonitor: 1.0,        // Keep charge monitor at full volume
+    stopCompression: 1.0,      // Keep stop compression at full volume
+    '1': 1.0,                  // Keep number audio at full volume
+    '2': 1.0,
+    '3': 1.0,
+    '4': 1.0,
+    '5': 1.0
+  });
+  
   // Initialize an audio pool for a specific sound
   const initAudio = useCallback((id, src, poolSize = 3) => {
     if (!audioPoolsRef.current[id]) {
-      audioPoolsRef.current[id] = new AudioPool(src, poolSize);
+      // Get the predefined volume for this sound type, or default to 1.0
+      const volume = soundVolumesRef.current[id] || 1.0;
+      audioPoolsRef.current[id] = new AudioPool(src, poolSize, volume);
     }
   }, []);
   
@@ -82,7 +102,9 @@ const useAudio = () => {
   // Clean up all audio elements on unmount
   useEffect(() => {
     return () => {
-      Object.values(audioPoolsRef.current).forEach(pool => {
+      // Store reference to current audio pools to avoid the React Hook warning
+      const currentAudioPools = audioPoolsRef.current;
+      Object.values(currentAudioPools).forEach(pool => {
         pool.stop();
       });
     };

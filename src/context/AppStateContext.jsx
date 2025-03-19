@@ -378,6 +378,9 @@ export const AppStateProvider = ({ children }) => {
     }
   }, [activeSection, clockStarted, startClock, ventilationActive, epiActive]);
 
+
+
+
   // Epinephrine functions - modified for count-up and cycle counting
   const handleEpinephrineClick = useCallback(() => {
     // Start the main timer if this is the first feature activated
@@ -435,27 +438,56 @@ export const AppStateProvider = ({ children }) => {
   // Metronome timer effect
   useEffect(() => {
     if (!metronomeRunning) return;
-    
+  
+    // Clear any existing timers
     if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
+      clearTimeout(timerIntervalRef.current);
       timerIntervalRef.current = null;
     }
     
     const bpm = 110; // Fixed BPM
     if (bpm <= 0) return;
     
-    const intervalTime = (60 / bpm) * 1000;
+    // Calculate the beat interval in milliseconds
+    const beatInterval = (60 / bpm) * 1000;
     
-    // Play immediately on start
+    // Track when the next beat should occur
+    let nextBeatTime = performance.now();
+    
+    // Function to schedule the next beat
+    const scheduleNextBeat = () => {
+      // Get current time
+      const now = performance.now();
+      
+      // Calculate when the next beat should happen
+      // If we've drifted, this will auto-correct by scheduling
+      // the next beat relative to when it should have occurred
+      nextBeatTime = Math.max(now, nextBeatTime + beatInterval);
+      
+      // Calculate time until next beat
+      const timeUntilNextBeat = nextBeatTime - now;
+      
+      // Schedule the next beat
+      timerIntervalRef.current = setTimeout(() => {
+        // Play the metronome sound
+        playSound('metronome');
+        
+        // Schedule the next beat
+        scheduleNextBeat();
+      }, timeUntilNextBeat);
+    };
+    
+    // Play the first beat immediately
     playSound('metronome');
+    nextBeatTime = performance.now() + beatInterval;
     
-    timerIntervalRef.current = setInterval(() => {
-      playSound('metronome');
-    }, intervalTime);
+    // Schedule future beats
+    scheduleNextBeat();
     
+    // Clean up on unmount or when metronome stops
     return () => {
       if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
+        clearTimeout(timerIntervalRef.current);
         timerIntervalRef.current = null;
       }
     };
@@ -500,8 +532,12 @@ export const AppStateProvider = ({ children }) => {
       return;
     }
     
+    // Add epiTime to dependencies by using it inside the effect
+    // This addresses the missing dependency warning
+    const currentEpiTime = epiTime;
+    
     // Reset timer to 0 when activated (only if it was just activated)
-    if (epiTime === 0 && epiIntervalRef.current === null) {
+    if (currentEpiTime === 0 && epiIntervalRef.current === null) {
       setEpiTime(0);
     }
     
@@ -526,7 +562,7 @@ export const AppStateProvider = ({ children }) => {
         epiIntervalRef.current = null;
       }
     };
-  }, [epiActive]);
+  }, [epiActive, epiTime]); 
 
   // Format seconds to MM:SS
   const formatTime = (totalSeconds) => {
