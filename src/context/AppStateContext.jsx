@@ -339,26 +339,27 @@ export const AppStateProvider = ({ children }) => {
 
   // Start ventilation timer
 
-const startVentilation = useCallback(() => {
-  if (ventilationIntervalRef.current) {
-    clearInterval(ventilationIntervalRef.current);
-    ventilationIntervalRef.current = null;
-  }
-  if (ventilationTimeoutRef.current) {
-    clearTimeout(ventilationTimeoutRef.current);
-    ventilationTimeoutRef.current = null;
-  }
-
-  const intervalTime = (60 / ventilationRate) * 1000;
-
-  ventilationTimeoutRef.current = setTimeout(() => {
+  const startVentilation = useCallback(() => {
+    if (ventilationIntervalRef.current) {
+      clearInterval(ventilationIntervalRef.current);
+      ventilationIntervalRef.current = null;
+    }
+    if (ventilationTimeoutRef.current) {
+      clearTimeout(ventilationTimeoutRef.current);
+      ventilationTimeoutRef.current = null;
+    }
+  
+    const intervalTime = (60 / ventilationRate) * 1000;
+  
+    // ✅ Play "ventilate" sound immediately on start
     playSound('ventilate');
-
+  
+    // ✅ THEN schedule the repeating ventilation sounds
     ventilationIntervalRef.current = setInterval(() => {
       playSound('ventilate');
     }, intervalTime);
-  }, intervalTime);
-}, [playSound, ventilationRate]);
+  }, [playSound, ventilationRate]);
+  
     
 
   // Toggle ventilation
