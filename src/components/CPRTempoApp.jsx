@@ -1,3 +1,5 @@
+//src/components/CPRTempoApp.jsx
+
 import React from 'react';
 import { AppStateProvider } from '../context/AppStateContext';
 import AppHeader from './Header/AppHeader';

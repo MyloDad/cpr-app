@@ -1,3 +1,5 @@
+//src/hooks/useAudio.js
+
 import { useRef, useCallback, useEffect } from 'react';
 
 // Detection for iOS device
@@ -16,7 +18,7 @@ class AudioPool {
     // Keep metronome louder on iOS since iOS is reducing volume
     this.volume = isIOS() ? 
       (src.includes('click.mp3') ? 0.2 : 1.0) :  // On iOS: metronome at 80%, others at 100%
-      (src.includes('click.mp3') ? 0.2 : 1.0);   // On desktop: metronome at 20%, others at 100%
+      (src.includes('click.mp3') ? 1.0 : 1.0);   // On desktop: metronome at 20%, others at 100%
     
     this.audioElements = [];
     this.currentIndex = 0;

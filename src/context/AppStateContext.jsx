@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import useAudio from '../hooks/useAudio';
+import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
+import useNativeAudio from '../hooks/useNativeAudio';
 
 // App constants
 export const COLORS = {
@@ -17,8 +19,16 @@ export const COLORS = {
 // Create the context
 const AppStateContext = createContext();
 
-// Path to audio files
-const AUDIO_PATH = '/audio/';
+// Get the correct audio path based on platform
+const getAudioPath = () => {
+  if (Capacitor.isNativePlatform()) {
+    // For native platforms, use relative paths to the assets directory
+    return ''; // The path will be handled by Capacitor's asset system
+  } else {
+    // For web, use the public folder path
+    return '/audio/';
+  }
+};
 
 // Initial state - used for reset
 const initialState = {
@@ -38,7 +48,9 @@ const initialState = {
   countdownAnnounced: {5: false, 4: false, 3: false, 2: false, 1: false},
   confirmReset: false,
   pulseFlashing: false,
-  epiFlashing: false
+  epiFlashing: false,
+  metronomeVolume: 0.5,
+  voiceVolume: 1.0
 };
 
 export const AppStateProvider = ({ children }) => {
@@ -60,6 +72,8 @@ export const AppStateProvider = ({ children }) => {
   const [confirmReset, setConfirmReset] = useState(initialState.confirmReset);
   const [pulseFlashing, setPulseFlashing] = useState(initialState.pulseFlashing);
   const [epiFlashing, setEpiFlashing] = useState(initialState.epiFlashing);
+  const [metronomeVolume, setMetronomeVolume] = useState(initialState.metronomeVolume);
+  const [voiceVolume, setVoiceVolume] = useState(initialState.voiceVolume);
   
   // Force UI refresh - Add this new state
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -70,47 +84,102 @@ export const AppStateProvider = ({ children }) => {
   const ventilationIntervalRef = useRef(null);
   const epiIntervalRef = useRef(null);
   const clockIntervalRef = useRef(null);
+  const metronomeTimerRef = useRef(null);
+  const lastMetronomeTimeRef = useRef(0);
 
   // Refs for circular function dependencies
   const startPulseCountdownRef = useRef(null);
   const startPauseCountdownRef = useRef(null);
 
-  // Audio hooks
-  const { initAudio, playSound, stopSound, unlockAudio } = useAudio();
+  // Platform detection
+  const isNative = Capacitor.isNativePlatform();
+  const isIOS = Capacitor.getPlatform() === 'ios';
+
+  // Audio path based on platform
+  const AUDIO_PATH = getAudioPath();
+
+  // Audio hooks - use the new native audio hook
+  const { initAudio, playSound, stopSound, setVolume, unlockAudio, releaseResources } = useNativeAudio();
+
+  const [metronomeReady, setMetronomeReady] = useState(false);
 
   // Initialize all audio files
   useEffect(() => {
-    // Initialize audio pools for all sounds we'll use
-    initAudio('metronome', `${AUDIO_PATH}click.mp3`, 5);  // More instances for rapid clicks
-    initAudio('ventilate', `${AUDIO_PATH}ventilate.mp3`, 3);
-    initAudio('chargeMonitor', `${AUDIO_PATH}charge_monitor.mp3`);
-    initAudio('stopCompression', `${AUDIO_PATH}stop_compression.mp3`);
-    initAudio('1', `${AUDIO_PATH}numbers/1.mp3`);
-    initAudio('2', `${AUDIO_PATH}numbers/2.mp3`);
-    initAudio('3', `${AUDIO_PATH}numbers/3.mp3`);
-    initAudio('4', `${AUDIO_PATH}numbers/4.mp3`);
-    initAudio('5', `${AUDIO_PATH}numbers/5.mp3`);
-    
-    // Unlock audio for iOS on first user interaction
-    document.addEventListener('click', unlockAudio, { once: true });
-    
-    return () => {
-      document.removeEventListener('click', unlockAudio);
+    const audioPoolSize = isNative ? 1 : 5;
+  
+    const loadSounds = async () => {
+      console.log('Loading audio files...');
+  
+      try {
+        await initAudio('metronome', `${AUDIO_PATH}click.mp3`, audioPoolSize);
+        console.log('Metronome loaded');
+        await initAudio('ventilate', `${AUDIO_PATH}ventilate.mp3`, 3);
+        await initAudio('chargeMonitor', `${AUDIO_PATH}charge_monitor.mp3`);
+        await initAudio('stopCompression', `${AUDIO_PATH}stop_compression.mp3`);
+        await initAudio('1', `${AUDIO_PATH}numbers/1.mp3`);
+        await initAudio('2', `${AUDIO_PATH}numbers/2.mp3`);
+        await initAudio('3', `${AUDIO_PATH}numbers/3.mp3`);
+        await initAudio('4', `${AUDIO_PATH}numbers/4.mp3`);
+        await initAudio('5', `${AUDIO_PATH}numbers/5.mp3`);
+  
+        console.log('All audio loaded successfully');
+        setMetronomeReady(true);
+      } catch (error) {
+        console.error('Error loading audio files:', error);
+      }
     };
-  }, [initAudio, unlockAudio]);
+  
+    loadSounds(); // <== MAKE SURE THIS ACTUALLY RUNS
+  
+    if (!isNative) {
+      document.addEventListener('click', unlockAudio, { once: true });
+    } else {
+      const appStateListener = App.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) {
+          if (metronomeRunning) startMetronome();
+          if (ventilationActive) startVentilation();
+        } else {
+          if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+          if (ventilationIntervalRef.current) clearInterval(ventilationIntervalRef.current);
+        }
+      });
+  
+      return () => {
+        appStateListener.remove();
+      };
+    }
+  
+    return () => {
+      if (!isNative) {
+        document.removeEventListener('click', unlockAudio);
+      }
+    };
+  }, []);
+  
+  
 
-  // Reset all features to their initial state - ENHANCED RESET FUNCTION
+  // Update volumes when state changes
+  useEffect(() => {
+    setVolume('metronome', metronomeVolume);
+  }, [metronomeVolume, setVolume]);
+  
+  useEffect(() => {
+    // Set volume for all voice prompts
+    ['ventilate', 'chargeMonitor', 'stopCompression', '1', '2', '3', '4', '5'].forEach(id => {
+      setVolume(id, voiceVolume);
+    });
+  }, [voiceVolume, setVolume]);
+
+  // Reset all features to their initial state
   const resetAllFeatures = useCallback(() => {
     console.log("RESET FUNCTION CALLED");
     
     // 1. First, stop all sounds
     try {
-      if (typeof stopSound === 'function') {
-        stopSound('metronome');
-        stopSound('ventilate');
-        stopSound('chargeMonitor');
-        stopSound('stopCompression');
-      }
+      stopSound('metronome');
+      stopSound('ventilate');
+      stopSound('chargeMonitor');
+      stopSound('stopCompression');
     } catch (e) {
       console.error("Error stopping sounds:", e);
     }
@@ -122,6 +191,11 @@ export const AppStateProvider = ({ children }) => {
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
+    }
+    
+    if (metronomeTimerRef.current) {
+      clearInterval(metronomeTimerRef.current);
+      metronomeTimerRef.current = null;
     }
     
     // Clear pulse interval
@@ -220,6 +294,53 @@ export const AppStateProvider = ({ children }) => {
     setConfirmReset(false);
   }, []);
 
+  // Start metronome - improved timing for native
+  const startMetronome = useCallback(() => {
+    if (metronomeTimerRef.current) {
+      clearInterval(metronomeTimerRef.current);
+      metronomeTimerRef.current = null;
+    }
+  
+    const bpm = 110;
+    const intervalMs = 60000 / bpm;
+  
+    // 🎯 Play the first click immediately
+    playSound('metronome');
+  
+    // 🎯 Then schedule repeated clicks
+    metronomeTimerRef.current = setInterval(() => {
+      playSound('metronome');
+    }, intervalMs);
+  }, [playSound]);
+  
+  
+  // Stop metronome
+  const stopMetronome = useCallback(() => {
+    if (metronomeTimerRef.current) {
+      clearInterval(metronomeTimerRef.current);
+      metronomeTimerRef.current = null;
+    }
+    
+    stopSound('metronome');
+  }, [stopSound]);
+
+  // Start ventilation timer
+  const startVentilation = useCallback(() => {
+    if (ventilationIntervalRef.current) {
+      clearInterval(ventilationIntervalRef.current);
+      ventilationIntervalRef.current = null;
+    }
+    
+    // Play immediately on start
+    playSound('ventilate');
+    
+    const intervalTime = (60 / ventilationRate) * 1000;
+    
+    ventilationIntervalRef.current = setInterval(() => {
+      playSound('ventilate');
+    }, intervalTime);
+  }, [playSound, ventilationRate]);
+
   // Toggle ventilation
   const toggleVentilation = useCallback(() => {
     // Start the main timer if this is the first feature activated
@@ -228,12 +349,32 @@ export const AppStateProvider = ({ children }) => {
       setStartTime(new Date());
     }
     
-    setVentilationActive(prev => !prev);
-  }, [clockStarted, startClock, activeSection, ventilationActive, epiActive]);
+    setVentilationActive(prev => {
+      const newState = !prev;
+      
+      if (newState) {
+        // Starting ventilation
+        startVentilation();
+      } else {
+        // Stopping ventilation
+        if (ventilationIntervalRef.current) {
+          clearInterval(ventilationIntervalRef.current);
+          ventilationIntervalRef.current = null;
+        }
+        stopSound('ventilate');
+      }
+      
+      return newState;
+    });
+  }, [clockStarted, startClock, activeSection, ventilationActive, epiActive, startVentilation, stopSound]);
 
   // Metronome functions
   const handleMetronomeClick = useCallback(() => {
-    // Start the main timer if this is the first feature activated
+    if (!metronomeReady) {
+      console.warn('Metronome not ready yet');
+      return;
+    }
+  
     if (!clockStarted && !activeSection && !ventilationActive && !epiActive) {
       startClock();
       setStartTime(new Date());
@@ -242,21 +383,29 @@ export const AppStateProvider = ({ children }) => {
     if (activeSection === 'metronome' || activeSection === 'pulse+metronome') {
       if (activeSection === 'pulse+metronome') {
         setActiveSection('pulse');
+        stopMetronome();
       } else {
         setActiveSection(null);
+        stopMetronome();
       }
     } else {
       if (activeSection === 'pulse') {
         setActiveSection('pulse+metronome');
+        startMetronome();
       } else {
         setActiveSection('metronome');
-        // Only set start time if it hasn't been set yet
+        startMetronome();
         if (!startTime) {
           setStartTime(new Date());
         }
       }
     }
-  }, [activeSection, clockStarted, startClock, ventilationActive, epiActive, startTime]);
+  }, [
+    metronomeReady, activeSection, clockStarted, startClock,
+    ventilationActive, epiActive, startTime, startMetronome, stopMetronome
+  ]);
+  
+  
 
   // Define startPulseCountdown with reference to the ref instead of direct function
   const startPulseCountdown = useCallback(() => {
@@ -378,9 +527,6 @@ export const AppStateProvider = ({ children }) => {
     }
   }, [activeSection, clockStarted, startClock, ventilationActive, epiActive]);
 
-
-
-
   // Epinephrine functions - modified for count-up and cycle counting
   const handleEpinephrineClick = useCallback(() => {
     // Start the main timer if this is the first feature activated
@@ -421,8 +567,16 @@ export const AppStateProvider = ({ children }) => {
   useEffect(() => {
     if (activeSection === 'metronome' || activeSection === 'pulse+metronome') {
       setMetronomeRunning(true);
+      // Start metronome if not already running
+      if (!metronomeTimerRef.current) {
+        startMetronome();
+      }
     } else {
       setMetronomeRunning(false);
+      // Stop metronome if running
+      if (metronomeTimerRef.current) {
+        stopMetronome();
+      }
     }
     
     if (!activeSection && !ventilationActive && !epiActive && clockStarted) {
@@ -433,137 +587,31 @@ export const AppStateProvider = ({ children }) => {
       setSeconds(0);
       setClockStarted(false);
     }
-  }, [activeSection, ventilationActive, epiActive, clockStarted]);
-
-  // Metronome timer effect
-// Detection for iOS device
-const isIOS = () => {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-};
-
-// Metronome timer effect - OPTIMIZED FOR iOS
-useEffect(() => {
-  if (!metronomeRunning) return;
-  
-  // Clear any existing timers
-  if (timerIntervalRef.current) {
-    clearTimeout(timerIntervalRef.current);
-    timerIntervalRef.current = null;
-  }
-  
-  const bpm = 110; // Fixed BPM
-  if (bpm <= 0) return;
-  
-  // Calculate the beat interval in milliseconds
-  const beatInterval = (60 / bpm) * 1000;
-  
-  // iOS has stricter background processing limitations,
-  // so we'll use a different strategy
-  if (isIOS()) {
-    console.log("Using iOS-optimized metronome strategy");
-    
-    // For iOS, we'll use a simpler approach with more aggressive scheduling
-    // to combat Safari's aggressive throttling
-    
-    let intervalId = null;
-    
-    // Play the first beat immediately
-    playSound('metronome');
-    
-    // Use setInterval for iOS - more reliable on iOS than the scheduled approach
-    // We'll create a pre-scheduled buffer of beats
-    intervalId = setInterval(() => {
-      // Play sound on each interval
-      playSound('metronome');
-    }, beatInterval);
-    
-    // Store the interval ID for cleanup
-    timerIntervalRef.current = intervalId;
-    
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  } else {
-    // Desktop browsers can use the more precise scheduling approach
-    console.log("Using desktop-optimized metronome strategy");
-    
-    // Track when the next beat should occur
-    let nextBeatTime = performance.now();
-    
-    // Function to schedule the next beat
-    const scheduleNextBeat = () => {
-      // Get current time
-      const now = performance.now();
-      
-      // Calculate when the next beat should happen
-      // If we've drifted, this will auto-correct by scheduling
-      // the next beat relative to when it should have occurred
-      nextBeatTime = Math.max(now, nextBeatTime + beatInterval);
-      
-      // Calculate time until next beat
-      const timeUntilNextBeat = nextBeatTime - now;
-      
-      // Schedule the next beat
-      timerIntervalRef.current = setTimeout(() => {
-        // Play the metronome sound
-        playSound('metronome');
-        
-        // Schedule the next beat
-        scheduleNextBeat();
-      }, timeUntilNextBeat);
-    };
-    
-    // Play the first beat immediately
-    playSound('metronome');
-    nextBeatTime = performance.now() + beatInterval;
-    
-    // Schedule future beats
-    scheduleNextBeat();
-  }
-  
-  // Clean up on unmount or when metronome stops
-  return () => {
-    if (timerIntervalRef.current) {
-      if (isIOS()) {
-        clearInterval(timerIntervalRef.current);
-      } else {
-        clearTimeout(timerIntervalRef.current);
-      }
-      timerIntervalRef.current = null;
-    }
-  };
-}, [metronomeRunning, playSound]);
+  }, [activeSection, ventilationActive, epiActive, clockStarted, startMetronome, stopMetronome]);
 
   // Ventilation timer effect
   useEffect(() => {
-    if (!ventilationActive) return;
-    
-    if (ventilationIntervalRef.current) {
-      clearInterval(ventilationIntervalRef.current);
-      ventilationIntervalRef.current = null;
-    }
-    
-    if (ventilationRate <= 0) return;
-    
-    const intervalTime = (60 / ventilationRate) * 1000;
-    
-    // Play immediately on start
-    playSound('ventilate');
-    
-    ventilationIntervalRef.current = setInterval(() => {
-      playSound('ventilate');
-    }, intervalTime);
-    
-    return () => {
+    if (!ventilationActive) {
       if (ventilationIntervalRef.current) {
         clearInterval(ventilationIntervalRef.current);
         ventilationIntervalRef.current = null;
+        stopSound('ventilate');
       }
-    };
-  }, [ventilationActive, ventilationRate, playSound]);
+      return;
+    }
+    
+    // If ventilation is active but interval isn't running, start it
+    if (!ventilationIntervalRef.current) {
+      startVentilation();
+    }
+    
+    // If ventilation rate changes, restart the interval
+    if (ventilationActive && ventilationIntervalRef.current) {
+      clearInterval(ventilationIntervalRef.current);
+      startVentilation();
+    }
+    
+  }, [ventilationActive, ventilationRate, startVentilation, stopSound]);
 
   // Epinephrine timer effect - modified for count-up
   useEffect(() => {
@@ -576,29 +624,23 @@ useEffect(() => {
       return;
     }
     
-    // Add epiTime to dependencies by using it inside the effect
-    // This addresses the missing dependency warning
-    const currentEpiTime = epiTime;
-    
-    // Reset timer to 0 when activated (only if it was just activated)
-    if (currentEpiTime === 0 && epiIntervalRef.current === null) {
-      setEpiTime(0);
+    // Only start if not already running
+    if (!epiIntervalRef.current) {
+      epiIntervalRef.current = setInterval(() => {
+        setEpiTime(prevTime => {
+          const newTime = prevTime + 1;
+          
+          // Start flashing when we reach 4:45 (285 seconds)
+          if (newTime === 285) {
+            setEpiFlashing(true);
+          }
+          
+          // Continue counting up indefinitely until button is clicked again
+          // No automatic cycle increment based on time
+          return newTime;
+        });
+      }, 1000);
     }
-    
-    epiIntervalRef.current = setInterval(() => {
-      setEpiTime(prevTime => {
-        const newTime = prevTime + 1;
-        
-        // Start flashing when we reach 4:45 (285 seconds)
-        if (newTime === 285) {
-          setEpiFlashing(true);
-        }
-        
-        // Continue counting up indefinitely until button is clicked again
-        // No automatic cycle increment based on time
-        return newTime;
-      });
-    }, 1000);
     
     return () => {
       if (epiIntervalRef.current) {
@@ -606,7 +648,7 @@ useEffect(() => {
         epiIntervalRef.current = null;
       }
     };
-  }, [epiActive, epiTime]); 
+  }, [epiActive]); 
 
   // Format seconds to MM:SS
   const formatTime = (totalSeconds) => {
@@ -626,26 +668,17 @@ useEffect(() => {
   // Cleanup all intervals on unmount
   useEffect(() => {
     return () => {
-      [timerIntervalRef, pulseIntervalRef, ventilationIntervalRef, epiIntervalRef, clockIntervalRef].forEach(ref => {
+      [timerIntervalRef, pulseIntervalRef, ventilationIntervalRef, epiIntervalRef, clockIntervalRef, metronomeTimerRef].forEach(ref => {
         if (ref && ref.current) {
           clearInterval(ref.current);
           ref.current = null;
         }
       });
+      
+      // Release audio resources
+      releaseResources();
     };
-  }, []);
-
-  // Effect to monitor key state changes for debugging
-  useEffect(() => {
-    console.log("State update:", {
-      activeSection,
-      seconds,
-      clockStarted,
-      ventilationActive,
-      epiActive,
-      refreshTrigger
-    });
-  }, [activeSection, seconds, clockStarted, ventilationActive, epiActive, refreshTrigger]);
+  }, [releaseResources]);
 
   // Exposed context value
   const contextValue = {
@@ -667,7 +700,11 @@ useEffect(() => {
     confirmReset,
     pulseFlashing,
     epiFlashing,
-    refreshTrigger, // Add the refresh trigger to the context
+    refreshTrigger,
+    metronomeVolume,
+    voiceVolume,
+    isNative,
+    isIOS,
     
     // Actions
     setVentilationRate,
@@ -680,6 +717,8 @@ useEffect(() => {
     handleEpinephrineClick,
     turnOffEpinephrine,
     resetAllFeatures,
+    setMetronomeVolume,
+    setVoiceVolume,
     
     // Utilities
     formatTime,
@@ -693,8 +732,7 @@ useEffect(() => {
     </AppStateContext.Provider>
   );
 };
-
-// Custom hook to use the app state
+// This export needs to be OUTSIDE of the AppStateProvider component
 export const useAppState = () => {
   const context = useContext(AppStateContext);
   if (context === undefined) {
