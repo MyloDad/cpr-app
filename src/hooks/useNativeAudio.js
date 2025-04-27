@@ -164,7 +164,7 @@ const useNativeAudio = () => {
     }
   
     console.log('Unlocking web audio...');
-    
+  
     try {
       if (audioContext.current && audioContext.current.state === 'suspended') {
         audioContext.current.resume().then(() => {
@@ -177,26 +177,9 @@ const useNativeAudio = () => {
       console.warn('AudioContext resume error', e);
     }
   
-    // Create a silent sound and play it to unlock web audio
-    const silentSound = new Audio();
-    silentSound.play().catch(e => console.warn('Silent sound play prevented:', e));
-  
-    // Try playing each loaded sound silently too
-    Object.values(audioMap.current).forEach(audio => {
-      if (!audio.native && audio.pool && audio.pool.length > 0) {
-        const element = audio.pool[0];
-        const originalVolume = element.volume;
-        element.volume = 0;
-        element.play()
-          .then(() => {
-            element.pause();
-            element.currentTime = 0;
-            element.volume = originalVolume;
-          })
-          .catch(e => console.warn('Audio unlock failed for', element.src));
-      }
-    });
+    // ❌ NO MORE forced silent plays of sounds individually
   }, [isNative]);
+  
   
   
 
