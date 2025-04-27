@@ -74,7 +74,8 @@ const globalStyles = `
 
 // The main app content
 const AppContent = () => {
-  const { ventilationActive, COLORS } = useAppState();
+  const { ventilationActive, COLORS, metronomeFlash } = useAppState();
+
   
   return (
     <div style={{ 
@@ -90,6 +91,22 @@ const AppContent = () => {
       <AppHeader />
       <Timer />
       
+      {metronomeFlash && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Soft white overlay
+    pointerEvents: 'none',
+    zIndex: 9999,
+    animation: 'flashFade 0.1s linear forwards'
+  }} />
+)}
+
+
+
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column',

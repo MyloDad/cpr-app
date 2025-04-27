@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import useNativeAudio from '../hooks/useNativeAudio';
@@ -29,6 +30,9 @@ const getAudioPath = () => {
     return '/audio/';
   }
 };
+
+
+
 
 // Initial state - used for reset
 const initialState = {
@@ -74,7 +78,10 @@ export const AppStateProvider = ({ children }) => {
   const [epiFlashing, setEpiFlashing] = useState(initialState.epiFlashing);
   const [metronomeVolume, setMetronomeVolume] = useState(initialState.metronomeVolume);
   const [voiceVolume, setVoiceVolume] = useState(initialState.voiceVolume);
-  
+  const [metronomeFlash, setMetronomeFlash] = useState(false);
+
+ 
+
   // Force UI refresh - Add this new state
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -86,6 +93,7 @@ export const AppStateProvider = ({ children }) => {
   const clockIntervalRef = useRef(null);
   const metronomeTimerRef = useRef(null);
   const lastMetronomeTimeRef = useRef(0);
+  const ventilationTimeoutRef = useRef(null);
 
   // Refs for circular function dependencies
   const startPulseCountdownRef = useRef(null);
@@ -304,14 +312,19 @@ export const AppStateProvider = ({ children }) => {
     const bpm = 110;
     const intervalMs = 60000 / bpm;
   
-    // 🎯 Play the first click immediately
+    // Play the first click immediately
     playSound('metronome');
+    setMetronomeFlash(true);
+    setTimeout(() => setMetronomeFlash(false), 100); // flash for 100ms
   
-    // 🎯 Then schedule repeated clicks
+    // Schedule repeated clicks
     metronomeTimerRef.current = setInterval(() => {
       playSound('metronome');
+      setMetronomeFlash(true);
+      setTimeout(() => setMetronomeFlash(false), 100); // flash for 100ms
     }, intervalMs);
   }, [playSound]);
+  
   
   
   // Stop metronome
@@ -325,21 +338,28 @@ export const AppStateProvider = ({ children }) => {
   }, [stopSound]);
 
   // Start ventilation timer
-  const startVentilation = useCallback(() => {
-    if (ventilationIntervalRef.current) {
-      clearInterval(ventilationIntervalRef.current);
-      ventilationIntervalRef.current = null;
-    }
-    
-    // Play immediately on start
+
+const startVentilation = useCallback(() => {
+  if (ventilationIntervalRef.current) {
+    clearInterval(ventilationIntervalRef.current);
+    ventilationIntervalRef.current = null;
+  }
+  if (ventilationTimeoutRef.current) {
+    clearTimeout(ventilationTimeoutRef.current);
+    ventilationTimeoutRef.current = null;
+  }
+
+  const intervalTime = (60 / ventilationRate) * 1000;
+
+  ventilationTimeoutRef.current = setTimeout(() => {
     playSound('ventilate');
-    
-    const intervalTime = (60 / ventilationRate) * 1000;
-    
+
     ventilationIntervalRef.current = setInterval(() => {
       playSound('ventilate');
     }, intervalTime);
-  }, [playSound, ventilationRate]);
+  }, intervalTime);
+}, [playSound, ventilationRate]);
+    
 
   // Toggle ventilation
   const toggleVentilation = useCallback(() => {
@@ -700,6 +720,7 @@ export const AppStateProvider = ({ children }) => {
     confirmReset,
     pulseFlashing,
     epiFlashing,
+    metronomeFlash,
     refreshTrigger,
     metronomeVolume,
     voiceVolume,
