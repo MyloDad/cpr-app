@@ -158,15 +158,30 @@ const useNativeAudio = () => {
   }, []);
 
   const unlockAudio = useCallback(() => {
-    if (isNative) return;
-    
-    if (audioContext.current && audioContext.current.state === 'suspended') {
-      audioContext.current.resume();
+    if (isNative) {
+      console.log('Audio unlocking not needed on native platforms');
+      return;
     }
-
+  
+    console.log('Unlocking web audio...');
+    
+    try {
+      if (audioContext.current && audioContext.current.state === 'suspended') {
+        audioContext.current.resume().then(() => {
+          console.log('AudioContext resumed successfully');
+        }).catch((e) => {
+          console.warn('AudioContext resume failed', e);
+        });
+      }
+    } catch (e) {
+      console.warn('AudioContext resume error', e);
+    }
+  
+    // Create a silent sound and play it to unlock web audio
     const silentSound = new Audio();
     silentSound.play().catch(e => console.warn('Silent sound play prevented:', e));
-
+  
+    // Try playing each loaded sound silently too
     Object.values(audioMap.current).forEach(audio => {
       if (!audio.native && audio.pool && audio.pool.length > 0) {
         const element = audio.pool[0];
@@ -178,10 +193,12 @@ const useNativeAudio = () => {
             element.currentTime = 0;
             element.volume = originalVolume;
           })
-          .catch(e => console.warn('Audio unlock failed:', e));
+          .catch(e => console.warn('Audio unlock failed for', element.src));
       }
     });
   }, [isNative]);
+  
+  
 
   const releaseResources = useCallback(async () => {
     try {
