@@ -44,18 +44,7 @@ const VentilationSlider = () => {
             cursor: 'pointer'
           }}
         />
-        <div style={{ 
-          position: 'absolute',
-          left: `${(ventilationRate-5)/15*100}%`,
-          top: '-4px',
-          width: '24px',
-          height: '24px',
-          borderRadius: '50%',
-          backgroundColor: COLORS.white,
-          boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-          transform: 'translateX(-12px)',
-          pointerEvents: 'none'
-        }}></div>
+
       </div>
       <div style={{ 
         display: 'flex', 

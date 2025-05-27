@@ -51,7 +51,29 @@ const globalStyles = `
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     cursor: pointer;
   }
-  
+  input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 24px;
+  width: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  margin-top: -6px; /* Align it vertically with the track */
+  border: none;
+}
+
+input[type=range]::-moz-range-thumb {
+  height: 24px;
+  width: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  border: none;
+}
+
+
   input[type=range]::-moz-range-thumb {
     width: 24px;
     height: 24px;
