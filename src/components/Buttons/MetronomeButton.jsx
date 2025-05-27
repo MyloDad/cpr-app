@@ -1,3 +1,5 @@
+//src/components/Buttons/MetronomeButton.jsx
+
 import React from 'react';
 import { Clock } from 'lucide-react';
 import { useAppState } from '../../context/AppStateContext';

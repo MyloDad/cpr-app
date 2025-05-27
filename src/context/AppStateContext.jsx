@@ -441,35 +441,54 @@ export const AppStateProvider = ({ children }) => {
     pulseIntervalRef.current = setInterval(() => {
       setPulseCheckTime(prevTime => {
         const newTime = prevTime + 1;
-        
-        // Show charge monitor warning at 1:45 (105 seconds)
+      
+        // Show charge monitor warning at 1:45
         if (newTime === 105) {
+          console.log("🔊 Playing charge monitor");
           setShowChargeMonitor(true);
           playSound('chargeMonitor');
           setPulseFlashing(true);
         }
-
-        // Countdown for last 5 seconds - directly matching the timer display
-        if (newTime === 115) playSound('5'); // 1:55
-        if (newTime === 116) playSound('4'); // 1:56
-        if (newTime === 117) playSound('3'); // 1:57
-        if (newTime === 118) playSound('2'); // 1:58
-        if (newTime === 119) playSound('1'); // 1:59
-        
-        // Handle the "stopCompression" at exactly 2:00 (120 seconds)
+      
+        // Countdown for last 5 seconds — ensure each only plays once
+        if (newTime === 115 && !countdownAnnounced[5]) {
+          console.log("🔊 5");
+          playSound('5');
+          setCountdownAnnounced(prev => ({ ...prev, 5: true }));
+        }
+        if (newTime === 116 && !countdownAnnounced[4]) {
+          console.log("🔊 4");
+          playSound('4');
+          setCountdownAnnounced(prev => ({ ...prev, 4: true }));
+        }
+        if (newTime === 117 && !countdownAnnounced[3]) {
+          console.log("🔊 3");
+          playSound('3');
+          setCountdownAnnounced(prev => ({ ...prev, 3: true }));
+        }
+        if (newTime === 118 && !countdownAnnounced[2]) {
+          console.log("🔊 2");
+          playSound('2');
+          setCountdownAnnounced(prev => ({ ...prev, 2: true }));
+        }
+        if (newTime === 119 && !countdownAnnounced[1]) {
+          console.log("🔊 1");
+          playSound('1');
+          setCountdownAnnounced(prev => ({ ...prev, 1: true }));
+        }
+      
+        // At 2:00, stop pulse and start pause
         if (newTime === 120) {
           playSound('stopCompression');
           setPulseFlashing(false);
-          
-          // Clear this interval and start the pause countdown
           clearInterval(pulseIntervalRef.current);
           startPauseCountdownRef.current();
-          
-          return 120; // Keep it at 120
+          return 120;
         }
-        
+      
         return newTime;
       });
+      
     }, 1000);
   }, [playSound]);
 
