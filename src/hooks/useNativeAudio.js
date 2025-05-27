@@ -18,57 +18,71 @@ const useNativeAudio = () => {
 
   const initAudio = useCallback(async (id, src, poolSize = 1) => {
     if (audioMap.current[id]) return;
-
+  
     try {
       if (isNative) {
         const assetId = id;
         const volume = src.includes('click.mp3') ? CLICK_VOLUME : VOICE_VOLUME;
-
+  
         await NativeAudio.preload({
           assetId,
           assetPath: src,
           volume,
           isUrl: false,
         });
-
+  
         audioMap.current[id] = { id: assetId, native: true, volume };
       } else {
-        if (id === 'metronome') {
-          // 🎯 Special handling for web metronome: load into AudioContext
-          if (!audioContext.current) {
-            audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
-          }
-
+        if (!audioContext.current) {
+          audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
+        }
+  
+        // 🎯 Use AudioContext for these IDs
+        const useContextIds = ['chargeMonitor', '1', '2', '3', '4', '5'];
+        if (useContextIds.includes(id)) {
           const response = await fetch(src);
           const arrayBuffer = await response.arrayBuffer();
           const decodedBuffer = await audioContext.current.decodeAudioData(arrayBuffer);
-
-          clickBuffer.current = decodedBuffer;
-
-          audioMap.current[id] = { 
+  
+          audioMap.current[id] = {
             buffer: decodedBuffer,
-            native: false, // web
+            volume: VOICE_VOLUME,
+            useContext: true,
           };
-          
-
-
-
+        } else if (id === 'metronome') {
+          // metronome already handled via AudioContext
+          const response = await fetch(src);
+          const arrayBuffer = await response.arrayBuffer();
+          const decodedBuffer = await audioContext.current.decodeAudioData(arrayBuffer);
+  
+          clickBuffer.current = decodedBuffer;
+  
+          audioMap.current[id] = {
+            buffer: decodedBuffer,
+            native: false,
+          };
         } else {
-          // Normal voice files
+          // default fallback to <audio> tag pooling
           const audioPool = Array(poolSize).fill(null).map(() => {
             const audio = new Audio(src);
             audio.preload = 'auto';
             audio.volume = VOICE_VOLUME;
             return audio;
           });
-
-          audioMap.current[id] = { pool: audioPool, currentIndex: 0, native: false, volume: VOICE_VOLUME };
+  
+          audioMap.current[id] = {
+            pool: audioPool,
+            currentIndex: 0,
+            native: false,
+            volume: VOICE_VOLUME,
+          };
         }
       }
     } catch (error) {
       console.error(`Failed to initialize audio: ${id}`, error);
     }
   }, [isNative]);
+  
 
   const playSound = useCallback(async (id) => {
     const audio = audioMap.current[id];
@@ -76,45 +90,61 @@ const useNativeAudio = () => {
       console.warn(`Audio not found: ${id}`);
       return null;
     }
-
+  
     try {
-      if (isNative) {
+      if (audio.native) {
         await NativeAudio.play({ assetId: audio.id, time: 0 });
         return { id: audio.id };
+      } else if (audio.useContext && audio.buffer && audioContext.current) {
+        const source = audioContext.current.createBufferSource();
+        source.buffer = audio.buffer;
+  
+        const gainNode = audioContext.current.createGain();
+        gainNode.gain.value = audio.volume || 1.0;
+  
+        source.connect(gainNode).connect(audioContext.current.destination);
+        source.start(0);
+  
+        console.log(`✅ Played from buffer: ${id}`);
+        return source;
       } else {
-        if (id === 'metronome' && clickBuffer.current && audioContext.current) {
-          // 🎯 Play click via AudioContext for perfect timing
-          console.log('Playing metronome click via AudioContext');
 
+        if (audio.useContext && audio.buffer && audioContext.current) {
           const source = audioContext.current.createBufferSource();
-          source.buffer = clickBuffer.current;
+          source.buffer = audio.buffer;
+        
           const gainNode = audioContext.current.createGain();
-          gainNode.gain.value = CLICK_VOLUME;
-
+          gainNode.gain.value = audio.volume || 1.0;
+        
           source.connect(gainNode).connect(audioContext.current.destination);
           source.start(0);
+        
+          console.log(`✅ Played from buffer: ${id}`);
           return source;
-        } else {
-          const pool = audio.pool;
-          const currentIndex = audio.currentIndex;
-          const element = pool[currentIndex];
-
-          if (!element.paused) {
-            element.pause();
-            element.currentTime = 0;
-          }
-
-          element.play().catch(e => console.warn('Audio play prevented:', e));
-          audio.currentIndex = (currentIndex + 1) % pool.length;
-
-          return element;
         }
+        
+
+
+        const pool = audio.pool;
+        const currentIndex = audio.currentIndex;
+        const element = pool[currentIndex];
+  
+        if (!element.paused) {
+          element.pause();
+          element.currentTime = 0;
+        }
+  
+        element.play().catch(e => console.warn('Audio play prevented:', e));
+        audio.currentIndex = (currentIndex + 1) % pool.length;
+  
+        return element;
       }
     } catch (error) {
       console.error(`Failed to play sound: ${id}`, error);
       return null;
     }
   }, []);
+  
 
   const stopSound = useCallback(async (id) => {
     const audio = audioMap.current[id];

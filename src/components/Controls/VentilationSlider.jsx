@@ -1,3 +1,5 @@
+//src/components/Controls/VentilationSlider.jsx
+
 import React from 'react';
 import { useAppState } from '../../context/AppStateContext';
 
