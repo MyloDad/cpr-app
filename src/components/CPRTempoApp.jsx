@@ -76,6 +76,88 @@ const globalStyles = `
 const AppContent = () => {
   const { ventilationActive, COLORS, metronomeFlash } = useAppState();
 
+  const [audioUnlocked, setAudioUnlocked] = React.useState(false);
+
+  React.useEffect(() => {
+    const unlock = () => {
+      let audioCtx;
+
+        if (typeof AudioContext !== 'undefined') {
+          audioCtx = new AudioContext();
+        } else if (typeof window !== 'undefined' && typeof window.webkitAudioContext !== 'undefined') {
+          audioCtx = new window.webkitAudioContext();
+        } else {
+          console.warn('No supported AudioContext found.');
+          return;
+        }
+
+  
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+  
+      setAudioUnlocked(true);
+    };
+  
+    window.addEventListener('touchstart', unlock, { once: true });
+    window.addEventListener('click', unlock, { once: true });
+  
+    return () => {
+      window.removeEventListener('touchstart', unlock);
+      window.removeEventListener('click', unlock);
+    };
+  }, []);
+  
+  if (!audioUnlocked) {
+    return (
+      <div style={{
+        height: '100vh',
+        backgroundColor: COLORS.background,
+        color: COLORS.white,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        padding: '20px',
+        textAlign: 'center',
+      }}>
+        <img 
+          src="/central-pierce-logo.png" 
+          alt="Central Pierce Fire & Rescue"
+          style={{
+            maxWidth: '60%',
+            height: 'auto',
+            maxHeight: '100px',
+            marginBottom: '20px',
+            opacity: 0.9,
+          }}
+        />
+        <h1 style={{
+          fontSize: '28px',
+          color: COLORS.logoRed,
+          marginBottom: '10px',
+        }}>
+          ArrestPro
+        </h1>
+        <p style={{
+          fontSize: '18px',
+          opacity: 0.85,
+          marginBottom: '8px',
+        }}>
+          Tap anywhere to begin
+        </p>
+        <p style={{
+          fontSize: '14px',
+          opacity: 0.5,
+          marginTop: '8px',
+        }}>
+          Audio is required for full functionality
+        </p>
+      </div>
+    );
+  }
+  
   
   return (
     <div style={{ 
