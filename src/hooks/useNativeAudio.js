@@ -59,8 +59,10 @@ const useNativeAudio = () => {
   
           audioMap.current[id] = {
             buffer: decodedBuffer,
-            native: false,
+            volume: CLICK_VOLUME,
+            useContext: true,
           };
+          
         } else {
           // default fallback to <audio> tag pooling
           const audioPool = Array(poolSize).fill(null).map(() => {
@@ -108,21 +110,6 @@ const useNativeAudio = () => {
         console.log(`✅ Played from buffer: ${id}`);
         return source;
       } else {
-
-        if (audio.useContext && audio.buffer && audioContext.current) {
-          const source = audioContext.current.createBufferSource();
-          source.buffer = audio.buffer;
-        
-          const gainNode = audioContext.current.createGain();
-          gainNode.gain.value = audio.volume || 1.0;
-        
-          source.connect(gainNode).connect(audioContext.current.destination);
-          source.start(0);
-        
-          console.log(`✅ Played from buffer: ${id}`);
-          return source;
-        }
-        
 
 
         const pool = audio.pool;

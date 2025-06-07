@@ -767,6 +767,10 @@ export const AppStateProvider = ({ children }) => {
     COLORS
   };
 
+
+
+
+  
   return (
     <AppStateContext.Provider value={contextValue}>
       {children}
