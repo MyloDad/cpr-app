@@ -124,11 +124,11 @@ export const AppStateProvider = ({ children }) => {
         await initAudio('ventilate', `${AUDIO_PATH}ventilate.mp3`, 3);
         await initAudio('chargeMonitor', `${AUDIO_PATH}charge_monitor.mp3`);
         await initAudio('stopCompression', `${AUDIO_PATH}stop_compression.mp3`);
-        await initAudio('1', `${AUDIO_PATH}numbers/1.mp3`);
-        await initAudio('2', `${AUDIO_PATH}numbers/2.mp3`);
-        await initAudio('3', `${AUDIO_PATH}numbers/3.mp3`);
-        await initAudio('4', `${AUDIO_PATH}numbers/4.mp3`);
-        await initAudio('5', `${AUDIO_PATH}numbers/5.mp3`);
+        await initAudio('1', `${AUDIO_PATH}numbers/1_v2.mp3`);
+        await initAudio('2', `${AUDIO_PATH}numbers/2_v2.mp3`);
+        await initAudio('3', `${AUDIO_PATH}numbers/3_v2.mp3`);
+        await initAudio('4', `${AUDIO_PATH}numbers/4_v2.mp3`);
+        await initAudio('5', `${AUDIO_PATH}numbers/5_v2.mp3`);
   
         console.log('All audio loaded successfully');
         setMetronomeReady(true);

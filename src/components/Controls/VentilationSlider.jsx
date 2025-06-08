@@ -25,8 +25,8 @@ const VentilationSlider = () => {
       <div style={{ position: 'relative' }}>
         <input
           type="range"
-          min="5"
-          max="20"
+          min="10"
+          max="30"
           value={ventilationRate}
           onChange={(e) => setVentilationRate(parseInt(e.target.value))}
           style={{ 
@@ -36,8 +36,8 @@ const VentilationSlider = () => {
             borderRadius: '10px',
             background: `linear-gradient(to right, 
               ${COLORS.logoYellow} 0%, 
-              ${COLORS.logoYellow} ${(ventilationRate-5)/15*100}%, 
-              #ddd ${(ventilationRate-5)/15*100}%, 
+              ${COLORS.logoYellow} ${(ventilationRate-10)/20*100}%, 
+              #ddd ${(ventilationRate-10)/20*100}%, 
               #ddd 100%)`,
             outline: 'none',
             transition: 'background 0.3s ease',
@@ -53,10 +53,12 @@ const VentilationSlider = () => {
         marginTop: '5px',
         color: '#555'
       }}>
-        <span>5</span>
+       
         <span>10</span>
         <span>15</span>
         <span>20</span>
+        <span>25</span>
+        <span>30</span>
       </div>
     </div>
   );
