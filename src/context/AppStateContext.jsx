@@ -3,6 +3,9 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import useNativeAudio from '../hooks/useNativeAudio';
+import { versionedPath } from '../utils/audioUtils';
+
+
 
 // App constants
 export const COLORS = {
@@ -119,16 +122,21 @@ export const AppStateProvider = ({ children }) => {
       console.log('Loading audio files...');
   
       try {
-        await initAudio('metronome', `${AUDIO_PATH}click.mp3`, audioPoolSize);
+        await initAudio('metronome', `${AUDIO_PATH}click.mp3`, audioPoolSize);   // NO versionedPath
         console.log('Metronome loaded');
-        await initAudio('ventilate', `${AUDIO_PATH}ventilate.mp3`, 3);
-        await initAudio('chargeMonitor', `${AUDIO_PATH}charge_monitor.mp3`);
-        await initAudio('stopCompression', `${AUDIO_PATH}stop_compression.mp3`);
-        await initAudio('1', `${AUDIO_PATH}numbers/1_v2.mp3`);
-        await initAudio('2', `${AUDIO_PATH}numbers/2_v2.mp3`);
-        await initAudio('3', `${AUDIO_PATH}numbers/3_v2.mp3`);
-        await initAudio('4', `${AUDIO_PATH}numbers/4_v2.mp3`);
-        await initAudio('5', `${AUDIO_PATH}numbers/5_v2.mp3`);
+        
+        await initAudio('1', `${AUDIO_PATH}${versionedPath('1_v2')}`);
+        await initAudio('2', `${AUDIO_PATH}${versionedPath('2_v2')}`);
+        await initAudio('3', `${AUDIO_PATH}${versionedPath('3_v2')}`);
+        await initAudio('4', `${AUDIO_PATH}${versionedPath('4_v2')}`);
+        await initAudio('5', `${AUDIO_PATH}${versionedPath('5_v2')}`);
+        await initAudio('chargeMonitor', `${AUDIO_PATH}${versionedPath('charge_monitor')}`, 2);
+
+
+        await initAudio('stopCompression', `${AUDIO_PATH}${versionedPath('stopCompression')}`);
+        await initAudio('ventilate', `${AUDIO_PATH}${versionedPath('ventilate')}`);
+        
+
   
         console.log('All audio loaded successfully');
         setMetronomeReady(true);
